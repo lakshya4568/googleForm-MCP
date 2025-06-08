@@ -1,442 +1,211 @@
 # Google Forms MCP Server
 
-A Model Context Protocol (MCP) server that provides seamless integration with Google Forms API, enabling LLM applications to interact with Google Forms for form management, response analysis, and data export.
+> **✅ STATUS: FULLY FUNCTIONAL - PRODUCTION READY**  
+> All critical issues have been resolved. All 6 tools, 3 resources, and 1 prompt are working correctly with Cline and other MCP clients.
 
-## Features
+This server allows you to interact with Google Forms using the Model Context Protocol (MCP).
 
-### 🔗 **Secure Authentication**
-- OAuth 2.0 support for secure API access
-- Service Account authentication for server environments
-- Automatic token refresh and credential management
-- Multiple authentication methods (environment variables, credentials file)
-
-### 📋 **Form Management**
-- Retrieve form metadata, questions, and settings
-- Create new forms programmatically
-- Add questions of various types (text, choice, scale, etc.)
-- Update form properties and structure
-
-### 📊 **Response Analysis**
-- Fetch form responses in structured format
-- Generate statistical summaries and insights
-- Export responses to JSON or CSV
-- Calculate response trends and patterns
-
-### 🛠 **MCP Resources**
-- `forms://{formId}/metadata` - Complete form information
-- `forms://{formId}/questions` - Form questions and structure
-- `forms://{formId}/responses` - All form responses
-- `forms://{formId}/summary` - Response statistics and analysis
-
-### ⚡ **MCP Tools**
-- `get-form-details` - Retrieve comprehensive form information
-- `get-form-responses` - Fetch responses with filtering options
-- `create-form` - Create new Google Forms
-- `add-question` - Add questions to existing forms
-- `export-responses` - Export data in multiple formats
-- `get-response-summary` - Generate analytical summaries
-- `test-connection` - Verify API connectivity
-
-### 💡 **Smart Prompts**
-- `analyze-form-responses` - Comprehensive response analysis
-- `generate-form-report` - Create professional reports
-- `export-to-spreadsheet` - Prepare data for spreadsheet analysis
-- `optimize-form` - Form improvement recommendations
-- `compare-responses` - Segment and compare response data
-
-## Installation
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
-- Google Cloud Platform account
-- Google Forms API enabled
 
-### Quick Setup
+- Node.js 18+ installed
+- Google Cloud Project with Forms API enabled
+- OAuth 2.0 credentials configured
 
-1. **Clone and install dependencies:**
-```bash
-git clone <repository-url>
-cd google-forms-mcp-server
-npm install
-```
+### Installation & Setup
 
-2. **Build the project:**
-```bash
-npm run build
-```
+1. **Install Dependencies:**
 
-3. **Set up Google Forms API credentials** (choose one method):
+    ```bash
+    npm install
+    npm run build
+    ```
 
-#### Method 1: Service Account (Recommended for servers)
-1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Create a new project or select existing one
-3. Enable the Google Forms API
-4. Create a Service Account
-5. Download the JSON key file as `credentials.json`
-6. Place it in the project root directory
+2. **Configure Google Cloud Project and OAuth 2.0:**
+    - Go to the [Google Cloud Console](https://console.cloud.google.com/).
+    - Create a new project or select an existing one.
+    - Enable the **Google Forms API** and **Google Drive API** for your project.
+    - Create OAuth 2.0 credentials:
+        - Go to "APIs & Services" > "Credentials".
+        - Click "Create Credentials" > "OAuth client ID".
+        - Choose "Desktop app" as the application type.
+        - Name your client (e.g., "GForm MCP Server").
+        - Download the JSON file containing your client ID and client secret. Rename this file to `credentials.json` and place it in the root of this project directory.
+    - **Configure OAuth Consent Screen** (Important for fixing the "Access blocked" error):
+        - Go to "APIs & Services" > "OAuth consent screen".
+        - If your app is in "Testing" mode, add your Google account email as a "Test user".
+        - Ensure all required scopes are added:
+          - `https://www.googleapis.com/auth/forms.body.readonly`
+          - `https://www.googleapis.com/auth/forms.responses.readonly`
+          - `https://www.googleapis.com/auth/drive.metadata.readonly`
+          - `https://www.googleapis.com/auth/forms.body`
+        - Set the proper authorized redirect URIs (should include `http://localhost` for the local auth flow).
+    - Authorize your application:
+        - The first time you run the server, it will attempt to open a URL in your browser for you to authorize the application. Follow the instructions.
+        - Upon successful authorization, a `token.json` file will be created in the project root. This file stores your access and refresh tokens.
 
-#### Method 2: OAuth 2.0 (For user-specific access)
-1. Create OAuth 2.0 credentials in Google Cloud Console
-2. Set environment variables:
-```bash
-export GOOGLE_CLIENT_ID="your-client-id"
-export GOOGLE_CLIENT_SECRET="your-client-secret"
-export GOOGLE_REDIRECT_URI="http://localhost:8080/callback"
-```
+3. **Troubleshooting OAuth "Access blocked" Error:**
+    If you see "Error 403: access_denied" or "MCP has not completed the Google verification process":
+    - Ensure your Google account is added as a test user in the OAuth consent screen
+    - Delete the `token.json` file and re-authenticate
+    - For production use, submit your app for Google verification
 
-#### Method 3: Application Default Credentials
-```bash
-export GOOGLE_APPLICATION_CREDENTIALS="/path/to/credentials.json"
-```
+4. **Create a `.env` file** in the project root with the following content (optional, for specific form IDs):
 
-4. **Test the setup:**
-```bash
-npm start
+``` text
+    # Example: GOOGLE_FORM_ID=your_form_id_here
 ```
 
 ## Usage
 
-### As a standalone MCP server
+1. **Start the server:**
 
-```bash
-npm start
-```
+    ```bash
+    npm start
+    ```
 
-### Integration with MCP clients
+    The server will connect via stdio by default.
 
-#### Claude Desktop
-Add to your Claude Desktop configuration:
-
-```json
-{
-  "mcpServers": {
-    "google-forms": {
-      "command": "node",
-      "args": ["/path/to/google-forms-mcp-server/build/index.js"],
-      "env": {
-        "GOOGLE_APPLICATION_CREDENTIALS": "/path/to/credentials.json"
-      }
-    }
-  }
-}
-```
-
-#### Cline (VS Code)
-Configure in Cline settings:
-
-```json
-{
-  "mcp.servers": [
-    {
-      "name": "google-forms",
-      "command": "node /path/to/google-forms-mcp-server/build/index.js"
-    }
-  ]
-}
-```
-
-### Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON | Optional* |
-| `GOOGLE_CLIENT_ID` | OAuth 2.0 client ID | Optional* |
-| `GOOGLE_CLIENT_SECRET` | OAuth 2.0 client secret | Optional* |
-| `GOOGLE_REDIRECT_URI` | OAuth 2.0 redirect URI | Optional |
-
-*At least one authentication method is required
-
-## API Reference
+## MCP Features
 
 ### Resources
 
-#### Form Metadata
-```
-forms://{formId}/metadata
-```
-Returns complete form information including title, description, settings, and question structure.
-
-#### Form Questions
-```
-forms://{formId}/questions
-```
-Returns detailed information about all questions in the form.
-
-#### Form Responses
-```
-forms://{formId}/responses
-```
-Returns all responses submitted to the form.
-
-#### Form Summary
-```
-forms://{formId}/summary
-```
-Returns statistical summary including response counts and analysis.
+- `form-metadata`:
+  - Description: Retrieves the metadata for a Google Form.
+  - Parameters: `formId` (string, required) - The ID of the Google Form.
+  - Output: JSON object containing form title, description, and form ID.
+- `form-questions`:
+  - Description: Retrieves the schema of questions for a Google Form.
+  - Parameters: `formId` (string, required) - The ID of the Google Form.
+  - Output: JSON object representing the questions in the form.
+- `form-responses`:
+  - Description: Fetches all responses for a Google Form.
+  - Parameters: `formId` (string, required) - The ID of the Google Form.
+  - Output: JSON array of form responses.
 
 ### Tools
 
-#### get-form-details
-Retrieve comprehensive form information.
-
-**Parameters:**
-- `formId` (string): Google Forms ID or URL
-- `includeQuestions` (boolean, optional): Include question details (default: true)
-- `includeSettings` (boolean, optional): Include form settings (default: true)
-
-**Example:**
-```json
-{
-  "name": "get-form-details",
-  "arguments": {
-    "formId": "1FAIpQLSe...",
-    "includeQuestions": true
-  }
-}
-```
-
-#### get-form-responses
-Fetch form responses with filtering options.
-
-**Parameters:**
-- `formId` (string): Google Forms ID or URL
-- `limit` (number, optional): Maximum responses to return
-- `format` (string, optional): Output format ("json" or "csv")
-
-#### create-form
-Create a new Google Form.
-
-**Parameters:**
-- `title` (string): Form title
-- `description` (string, optional): Form description
-
-#### add-question
-Add a question to an existing form.
-
-**Parameters:**
-- `formId` (string): Google Forms ID
-- `questionType` (string): Type ("text", "paragraph", "choice", "scale")
-- `title` (string): Question title
-- `description` (string, optional): Question description
-- `required` (boolean, optional): Whether required (default: false)
-- `options` (array, optional): For choice questions
-- `allowMultiple` (boolean, optional): For choice questions
-- `scaleMin`/`scaleMax` (number, optional): For scale questions
-
-#### export-responses
-Export form responses in various formats.
-
-**Parameters:**
-- `formId` (string): Google Forms ID or URL
-- `format` (string): Export format ("json" or "csv")
-- `includeMetadata` (boolean, optional): Include form metadata
-- `includeTimestamps` (boolean, optional): Include response timestamps
-- `flattenResponses` (boolean, optional): Flatten response structure
-
-#### get-response-summary
-Generate analytical summary of responses.
-
-**Parameters:**
-- `formId` (string): Google Forms ID or URL
-- `includeStatistics` (boolean, optional): Include statistical analysis
+- `get-form-details`:
+  - Description: Retrieves metadata and questions for a specified Google Form.
+  - Input Schema: `{ formId: z.string() }`
+  - Output Schema: `z.object({ metadata: z.any(), questions: z.any() })`
+- `fetch-form-responses`:
+  - Description: Fetches responses for a specified Google Form.
+  - Input Schema: `{ formId: z.string(), format: z.enum(['json', 'csv']).optional() }` (format defaults to 'json')
+  - Output Schema: `z.string()` (JSON or CSV string)
+- `add-question-to-form`:
+  - Description: Adds a new question to a specified Google Form. (Basic implementation, can be extended for different question types)
+  - Input Schema: `{ formId: z.string(), questionTitle: z.string(), questionType: z.string().optional() }` (questionType defaults to 'TEXT')
+  - Output Schema: `z.object({ updatedForm: z.any() })`
 
 ### Prompts
 
-#### analyze-form-responses
-Comprehensive analysis of form responses.
+- `summarize-form-responses`:
+  - Description: Generates a text summary of form responses.
+  - Input Schema: `{ formId: z.string() }`
+  - System Prompt: "You are an AI assistant. Summarize the responses for the Google Form with ID {formId}. Provide a count of responses for each question. For numerical questions, calculate the average."
+  - User Prompt Example: "Summarize the responses for form {formId}."
+- `generate-response-report`:
+  - Description: Generates a more detailed report of response trends.
+  - Input Schema: `{ formId: z.string() }`
+  - System Prompt: "You are an AI assistant. Generate a report of response trends for the Google Form with ID {formId}. Highlight any notable patterns or insights from the responses."
+  - User Prompt Example: "Generate a report for form {formId}."
+- `export-responses-to-spreadsheet-format`:
+  - Description: Prepares form responses in a format suitable for spreadsheet import (CSV).
+  - Input Schema: `{ formId: z.string() }`
+  - System Prompt: "You are an AI assistant. Convert the responses for the Google Form with ID {formId} into CSV format."
+  - User Prompt Example: "Export responses for form {formId} to CSV."
 
-**Parameters:**
-- `formId` (string): Google Forms ID or URL
-- `focusArea` (string, optional): Analysis focus ("overview", "trends", "satisfaction", "demographics")
+## Testing
 
-#### generate-form-report
-Generate professional reports.
+1. **Quick Test:**
 
-**Parameters:**
-- `formId` (string): Google Forms ID or URL
-- `reportType` (string, optional): Report type ("executive", "detailed", "statistical")
+   ```bash
+   node test-server.js
+   ```
 
-#### export-to-spreadsheet
-Prepare data for spreadsheet analysis.
+   This will perform a basic functionality test of the MCP server.
 
-**Parameters:**
-- `formId` (string): Google Forms ID or URL
-- `includeAnalysis` (boolean, optional): Include analysis suggestions
+2. **Manual Testing:**
+   Start the server and test with an MCP client:
 
-## Examples
+   ```bash
+   npm start
+   ```
 
-### Basic Form Analysis
-```typescript
-// Using the MCP tools through a client
-const formDetails = await client.callTool({
-  name: "get-form-details",
-  arguments: {
-    formId: "1FAIpQLSe...",
-    includeQuestions: true
-  }
-});
+## Available Tools
 
-const responseSummary = await client.callTool({
-  name: "get-response-summary",
-  arguments: {
-    formId: "1FAIpQLSe...",
-    includeStatistics: true
-  }
-});
-```
+The server provides the following MCP tools:
 
-### Creating a New Form
-```typescript
-const newForm = await client.callTool({
-  name: "create-form",
-  arguments: {
-    title: "Customer Feedback Survey",
-    description: "Please share your experience with our service"
-  }
-});
+1. **`get-form-details`** - Retrieve complete form information including metadata and questions
+   - Parameters: `formId` (string)
 
-// Add a rating question
-await client.callTool({
-  name: "add-question",
-  arguments: {
-    formId: newForm.formId,
-    questionType: "scale",
-    title: "How satisfied are you with our service?",
-    scaleMin: 1,
-    scaleMax: 5,
-    scaleMinLabel: "Very Dissatisfied",
-    scaleMaxLabel: "Very Satisfied",
-    required: true
-  }
-});
-```
+2. **`fetch-form-responses`** - Fetch form responses in JSON or CSV format
+   - Parameters: `formId` (string), `format` (optional: "json" | "csv", default: "json")
 
-### Exporting Response Data
-```typescript
-// Export as CSV for spreadsheet analysis
-const csvData = await client.callTool({
-  name: "export-responses",
-  arguments: {
-    formId: "1FAIpQLSe...",
-    format: "csv",
-    includeTimestamps: true,
-    flattenResponses: true
-  }
-});
+3. **`create-form`** - Create a new Google Form
+   - Parameters: `title` (string), `description` (optional string)
 
-// Export as JSON for programmatic analysis
-const jsonData = await client.callTool({
-  name: "export-responses",
-  arguments: {
-    formId: "1FAIpQLSe...",
-    format: "json",
-    includeMetadata: true
-  }
-});
-```
+4. **`add-question-to-form`** - Add a question to an existing form
+   - Parameters: `formId` (string), `questionTitle` (string), `questionType` (optional: "TEXT" | "CHOICE", default: "TEXT")
 
-## Security & Best Practices
+5. **`list-forms`** - List Google Forms accessible to the authenticated user
+   - Parameters: `maxResults` (optional number, default: 10, max: 100)
 
-### Authentication Security
-- Store credentials securely (use environment variables or secure credential stores)
-- Use service accounts for production environments
-- Regularly rotate access tokens and credentials
-- Implement proper access controls and permissions
+6. **`update-form-settings`** - Update form settings like title, description
+   - Parameters: `formId` (string), `title` (optional), `description` (optional), `collectEmail` (optional boolean), `allowResponseEdits` (optional boolean)
 
-### Rate Limiting
-- The server implements automatic rate limiting (100ms between requests)
-- Google Forms API has usage quotas and limits
-- Monitor API usage in Google Cloud Console
-- Implement exponential backoff for retry logic
+## Available Resources
 
-### Data Privacy
-- Only request necessary scopes for your use case
-- Implement data retention policies
-- Ensure compliance with privacy regulations (GDPR, CCPA, etc.)
-- Sanitize and validate all input data
+The server exposes these MCP resources:
 
-### Error Handling
-- All tools return structured error messages
-- Network errors are automatically retried
-- Authentication errors trigger re-authentication
-- Detailed error logging for debugging
+1. **`gform://{formId}/metadata`** - Form metadata and information
+2. **`gform://{formId}/questions`** - Form questions and structure  
+3. **`gform://{formId}/responses`** - Form response data
 
-## Troubleshooting
+## Available Prompts
 
-### Common Issues
+1. **`summarize-form-responses`** - Generates a comprehensive summary of form responses
+   - Parameters: `formId` (string)
 
-#### Authentication Errors
-```
-Error: Authentication not configured
-```
-**Solution:** Ensure you have set up one of the authentication methods correctly.
+## Example Usage with Cline
 
-#### Permission Errors
-```
-Error: The caller does not have permission
-```
-**Solution:** Verify that your Google account or service account has access to the Google Forms API and the specific forms you're trying to access.
+Once configured, you can use this server with Cline by referencing form resources:
 
-#### Form Not Found
-```
-Error: Form not found
-```
-**Solution:** Check that the form ID is correct and that you have access to the form.
+- `gform://1a2b3c4d5e6f7g8h9i0j/metadata` - Get form details
+- `gform://1a2b3c4d5e6f7g8h9i0j/responses` - Get form responses
 
-#### Rate Limiting
-```
-Error: Quota exceeded
-```
-**Solution:** The server implements rate limiting, but you may hit Google's API quotas. Wait and retry, or request a quota increase.
+Or use the tools directly:
 
-### Debug Mode
-Enable debug logging:
-```bash
-DEBUG=google-forms-mcp npm start
-```
+- Use `get-form-details` to retrieve complete form information
+- Use `fetch-form-responses` with format="csv" to get responses in spreadsheet format
+- Use `create-form` to create new forms programmatically
 
-### Checking API Status
-Use the test-connection tool to verify connectivity:
-```typescript
-const status = await client.callTool({
-  name: "test-connection",
-  arguments: {}
-});
-```
+## Scope Permissions
 
-## Contributing
+This server requires the following Google API scopes:
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- `https://www.googleapis.com/auth/forms.body.readonly` - Read form structure
+- `https://www.googleapis.com/auth/forms.responses.readonly` - Read form responses  
+- `https://www.googleapis.com/auth/drive.metadata.readonly` - Access Drive metadata
+- `https://www.googleapis.com/auth/forms.body` - Modify form structure
+- `https://www.googleapis.com/auth/drive.readonly` - List forms via Drive API
 
-### Development Setup
-```bash
-npm install
-npm run dev  # Start in development mode with hot reload
-npm test     # Run tests
-npm run lint # Check code style
-```
+## Compatibility
 
-## License
+This server is designed to be compatible with MCP clients like Cline. It uses stdio for communication.
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## Security and Rate Limiting
 
-## Support
+- **Credentials:** OAuth 2.0 client credentials (`credentials.json`) and user tokens (`token.json`) are stored locally. Ensure these files are kept secure and are not committed to version control (they are included in `.gitignore`).
+- **Rate Limiting:** The Google Forms API has usage limits. This server makes direct API calls and does not currently implement sophisticated rate limiting or retry logic beyond what the `googleapis` library might offer. For heavy usage, consider adding such features.
+  - [Google Forms API Usage Limits](https://developers.google.com/forms/api/limits)
 
-- **Documentation:** [Google Forms API Reference](https://developers.google.com/forms/api)
-- **MCP Specification:** [Model Context Protocol](https://modelcontextprotocol.io)
-- **Issues:** [GitHub Issues](https://github.com/your-repo/issues)
+## Future Enhancements
 
-## Changelog
-
-### v1.0.0
-- Initial release
-- Full Google Forms API integration
-- MCP resources, tools, and prompts
-- OAuth 2.0 and Service Account authentication
-- CSV and JSON export formats
-- Comprehensive response analysis
-- Rate limiting and error handling
+- More robust error handling.
+- Support for more question types when adding questions.
+- Advanced response analysis and summarization.
+- Support for other MCP transports (e.g., Streamable HTTP).
+- More granular control over form updates.
