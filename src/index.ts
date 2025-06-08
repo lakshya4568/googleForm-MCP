@@ -1,15 +1,22 @@
 #!/usr/bin/env node
-
-import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
 import dotenv from "dotenv";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+  ListToolsRequestSchema,
+  CallToolRequestSchema,
+  ErrorCode,
+  McpError
+} from "@modelcontextprotocol/sdk/types.js";
+import { z } from "zod";
 
 import { googleFormsService } from "./services/google-forms-service.js";
 import { googleFormsAuth } from "./auth/google-auth.js";
-import { 
-  formatFormForDisplay, 
-  formatResponseForDisplay, 
+import {
+  formatFormForDisplay,
+  formatResponseForDisplay,
   extractFormIdFromUrl,
   calculateResponseStats,
   truncateText,
@@ -36,117 +43,221 @@ class GoogleFormsMcpServer {
       version: "1.0.0"
     });
 
-    this.setupResources();
+    this.setupHandlers();
     this.setupTools();
     this.setupPrompts();
   }
 
+  // Resource helper methods
+  private async getFormMetadata(formId: string): Promise<any> {
+    const form = await googleFormsService.getForm(formId);
+    return { id: form.formId, title: form.info.title, description: form.info.description };
+  }
+
+  private async getFormQuestions(formId: string): Promise<any> {
+    const form = await googleFormsService.getForm(formId);
+    return formatFormForDisplay(form).questions;
+  }
+
+  private async getFormResponses(formId: string): Promise<any> {
+    const responses = await googleFormsService.getAllFormResponses(formId);
+    return responses.map(r => formatResponseForDisplay(r));
+  }
+
+  private async getFormSummary(formId: string): Promise<any> {
+    return await googleFormsService.getFormSummary(formId);
+  }
+
   /**
-   * Setup MCP resources
+   * Setup MCP handlers
    */
-  private setupResources() {
-    // Form metadata resource
-    this.server.resource(
-      "form-metadata",
-      new ResourceTemplate("forms://{formId}/metadata", { list: undefined }),
-      async (uri, { formId }) => {
-        try {
-          const form = await googleFormsService.getForm(formId);
-          const formattedForm = formatFormForDisplay(form);
-          
-          return {
-            contents: [{
-              uri: uri.href,
-              mimeType: "application/json",
-              text: JSON.stringify(formattedForm, null, 2)
-            }]
-          };
-        } catch (error: any) {
-          throw new Error(`Failed to get form metadata: ${error.message}`);
-        }
-      }
-    );
+  private setupHandlers(): void {
+    // List available resources
+    this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
+      return {
+        resources: [
+          {
+            uri: "forms://metadata",
+            name: "Form Metadata",
+            description: "Get metadata for a Google Form"
+          },
+          {
+            uri: "forms://questions", 
+            name: "Form Questions",
+            description: "Get questions from a Google Form"
+          },
+          {
+            uri: "forms://responses",
+            name: "Form Responses", 
+            description: "Get responses from a Google Form"
+          },
+          {
+            uri: "forms://summary",
+            name: "Form Summary",
+            description: "Get summary analytics for a Google Form"
+          }
+        ]
+      };
+    });
 
-    // Form questions resource
-    this.server.resource(
-      "form-questions",
-      new ResourceTemplate("forms://{formId}/questions", { list: undefined }),
-      async (uri, { formId }) => {
-        try {
-          const form = await googleFormsService.getForm(formId);
-          const formattedForm = formatFormForDisplay(form);
-          
-          return {
-            contents: [{
-              uri: uri.href,
-              mimeType: "application/json",
-              text: JSON.stringify({
-                formId: form.formId,
-                title: form.info.title,
-                questionCount: formattedForm.questionCount,
-                questions: formattedForm.questions
-              }, null, 2)
-            }]
-          };
-        } catch (error: any) {
-          throw new Error(`Failed to get form questions: ${error.message}`);
-        }
+    // Read resource content
+    this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+      const { uri } = request.params;
+      const url = new URL(uri);
+      
+      if (url.protocol !== "forms:") {
+        throw new Error(`Unsupported protocol: ${url.protocol}`);
       }
-    );
 
-    // Form responses resource
-    this.server.resource(
-      "form-responses",
-      new ResourceTemplate("forms://{formId}/responses", { list: undefined }),
-      async (uri, { formId }) => {
-        try {
-          const form = await googleFormsService.getForm(formId);
-          const responses = await googleFormsService.getAllFormResponses(formId);
-          const formattedResponses = responses.map(response => 
-            formatResponseForDisplay(response, form)
-          );
-          
-          return {
-            contents: [{
-              uri: uri.href,
-              mimeType: "application/json",
-              text: JSON.stringify({
-                formId,
-                responseCount: responses.length,
-                responses: formattedResponses
-              }, null, 2)
-            }]
-          };
-        } catch (error: any) {
-          throw new Error(`Failed to get form responses: ${error.message}`);
-        }
+      const formId = url.searchParams.get('formId');
+      if (!formId) {
+        throw new Error("formId parameter is required");
       }
-    );
 
-    // Form summary resource
-    this.server.resource(
-      "form-summary",
-      new ResourceTemplate("forms://{formId}/summary", { list: undefined }),
-      async (uri, { formId }) => {
-        try {
-          const summary = await googleFormsService.getFormSummary(formId);
-          const responseSummary = await googleFormsService.generateResponseSummary(formId);
-          
-          return {
-            contents: [{
-              uri: uri.href,
-              mimeType: "application/json",
-              text: JSON.stringify({
-                ...summary,
-                ...responseSummary
-              }, null, 2)
-            }]
-          };
-        } catch (error: any) {
-          throw new Error(`Failed to get form summary: ${error.message}`);
+      try {
+        switch (url.pathname) {
+          case "/metadata":
+            return await this.getFormMetadata(formId);
+          case "/questions":
+            return await this.getFormQuestions(formId);
+          case "/responses":
+            return await this.getFormResponses(formId);
+          case "/summary":
+            return await this.getFormSummary(formId);
+          default:
+            throw new Error(`Unknown resource path: ${url.pathname}`);
         }
+      } catch (error: any) {
+        throw new Error(`Failed to read resource: ${error.message}`);
       }
-    );
+    });
+
+    // List available tools
+    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
+      return {
+        tools: [
+          {
+            name: "get-form-details",
+            description: "Get detailed information about a Google Form",
+            inputSchema: {
+              type: "object",
+              properties: {
+                formId: {
+                  type: "string",
+                  description: "Google Forms ID or URL"
+                },
+                includeQuestions: {
+                  type: "boolean",
+                  description: "Include question details",
+                  default: true
+                },
+                includeSettings: {
+                  type: "boolean", 
+                  description: "Include form settings",
+                  default: true
+                }
+              },
+              required: ["formId"]
+            }
+          },
+          {
+            name: "get-form-responses",
+            description: "Get responses from a Google Form",
+            inputSchema: {
+              type: "object",
+              properties: {
+                formId: {
+                  type: "string",
+                  description: "Google Forms ID or URL"
+                },
+                limit: {
+                  type: "number",
+                  description: "Maximum number of responses to return"
+                },
+                format: {
+                  type: "string",
+                  enum: ["json", "csv"],
+                  description: "Output format",
+                  default: "json"
+                }
+              },
+              required: ["formId"]
+            }
+          },
+          {
+            name: "create-form",
+            description: "Create a new Google Form",
+            inputSchema: {
+              type: "object",
+              properties: {
+                title: {
+                  type: "string",
+                  description: "Form title"
+                },
+                description: {
+                  type: "string",
+                  description: "Form description"
+                }
+              },
+              required: ["title"]
+            }
+          },
+          {
+            name: "export-responses",
+            description: "Export form responses in different formats",
+            inputSchema: {
+              type: "object",
+              properties: {
+                formId: {
+                  type: "string",
+                  description: "Google Forms ID"
+                },
+                format: {
+                  type: "string",
+                  enum: ["json", "csv"],
+                  description: "Export format",
+                  default: "json"
+                },
+                includeMetadata: {
+                  type: "boolean",
+                  description: "Include form metadata",
+                  default: true
+                }
+              },
+              required: ["formId"]
+            }
+          }
+        ]
+      };
+    });
+
+    // Handle tool calls
+    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      const { name, arguments: args } = request.params;
+
+      try {
+        switch (name) {
+          case "get-form-details":
+            return await this.handleGetFormDetails(args);
+          case "get-form-responses":
+            return await this.handleGetFormResponses(args);
+          case "create-form":
+            return await this.handleCreateForm(args);
+          case "export-responses":
+            return await this.handleExportResponses(args);
+          default:
+            throw new Error(`Unknown tool: ${name}`);
+        }
+      } catch (error: any) {
+        return {
+          content: [{
+            type: "text",
+            text: `Error: ${error.message}`
+          }],
+          isError: true
+        };
+      }
+    });
   }
 
   /**
@@ -689,29 +800,11 @@ Please use the available tools to gather the response data and provide:
   /**
    * Start the MCP server
    */
-  async start() {
-    console.log("Starting Google Forms MCP Server...");
-    
-    try {
-      // Test authentication
-      const authStatus = googleFormsAuth.getAuthStatus();
-      console.log(`Authentication status: ${authStatus.type} (${authStatus.isConfigured ? 'configured' : 'not configured'})`);
-      
-      if (!authStatus.isConfigured) {
-        console.warn("Warning: Google Forms authentication not configured. Some features may not work.");
-        console.warn("Please set up authentication using one of these methods:");
-        console.warn("1. Set GOOGLE_APPLICATION_CREDENTIALS environment variable");
-        console.warn("2. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables");
-        console.warn("3. Place credentials.json file in the project root");
-      }
-
-      const transport = new StdioServerTransport();
-      await this.server.connect(transport);
-      console.log("Google Forms MCP Server is running");
-    } catch (error) {
-      console.error("Failed to start server:", error);
-      process.exit(1);
-    }
+  async start(): Promise<void> {
+    // connect over stdio
+    const transport = new StdioServerTransport();
+    await this.server.connect(transport);
+    console.log("Google Forms MCP server is up and running");
   }
 }
 

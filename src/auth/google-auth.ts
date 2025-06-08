@@ -1,7 +1,6 @@
-import { GoogleAuth } from 'google-auth-library';
-import { OAuth2Client } from 'google-auth-library';
-import fs from 'fs/promises';
-import path from 'path';
+import { GoogleAuth, OAuth2Client } from 'google-auth-library';
+import * as path from 'path';
+import { promises as fs } from 'fs';
 
 /**
  * Authentication manager for Google Forms API
@@ -17,7 +16,7 @@ export class GoogleFormsAuth {
   /**
    * Load credentials from environment variables or credentials file
    */
-  private async loadCredentials() {
+  private async loadCredentials(): Promise<void> {
     try {
       // First try to load from environment variables
       if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
@@ -73,7 +72,7 @@ export class GoogleFormsAuth {
   /**
    * Setup OAuth2 client from environment variables
    */
-  private async setupOAuth2Client() {
+  private async setupOAuth2Client(): Promise<void> {
     const oauth2Client = new OAuth2Client(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
@@ -101,7 +100,7 @@ export class GoogleFormsAuth {
   /**
    * Setup OAuth2 client from credentials file
    */
-  private async setupOAuth2ClientFromFile() {
+  private async setupOAuth2ClientFromFile(): Promise<void> {
     const clientConfig = this.credentials.web || this.credentials.installed;
     const oauth2Client = new OAuth2Client(
       clientConfig.client_id,

@@ -1,17 +1,14 @@
-import { forms_v1, google } from 'googleapis';
+import { google } from 'googleapis';
 import { googleFormsAuth } from '../auth/google-auth.js';
+import type { forms_v1 } from 'googleapis';
 import type {
   Form,
-  FormResponse,
-  ListFormResponsesResponse,
   CreateFormRequest,
-  UpdateFormRequest,
   BatchUpdateFormRequest,
-  BatchUpdateFormResponse,
+  ListFormResponsesResponse,
+  FormResponse,
   FormSummary,
   ResponseSummary,
-  QuestionSummary,
-  QuestionStatistics,
   ExportOptions
 } from '../types/forms.js';
 
@@ -29,13 +26,12 @@ export class GoogleFormsService {
   /**
    * Initialize the Google Forms API client
    */
-  private async initializeApi() {
+  private async initializeApi(): Promise<void> {
     try {
       const authClient = await googleFormsAuth.getAuthClient();
       this.formsApi = google.forms({ version: 'v1', auth: authClient });
     } catch (error) {
       console.error('Failed to initialize Google Forms API:', error);
-      throw error;
     }
   }
 
