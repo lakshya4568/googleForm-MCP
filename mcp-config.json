@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "google-forms": {
+      "command": "node",
+      "args": [
+        "./dist/gform-mcp-server.js"
+      ],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
