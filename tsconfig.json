@@ -11,7 +11,7 @@
   },
   "include": [
     "src/**/*"
-  ],
+, "googleForm-MCP/src/googleFormsService.ts", "googleForm-MCP/src/gform-mcp-server.ts"  ],
   "exclude": [
     "node_modules"
   ]

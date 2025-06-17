@@ -1,5 +1,6 @@
 import { google, Auth, forms_v1 } from 'googleapis';
 import { promises as fs } from 'fs';
+import * as fsSync from 'fs';
 import path from 'path';
 import process from 'process';
 import { authenticate } from '@google-cloud/local-auth';
@@ -16,8 +17,22 @@ const SCOPES = [
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
-const TOKEN_PATH = path.join(process.cwd(), 'token.json');
-const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
+const getProjectRoot = () => {
+    // Try to find the project root by looking for package.json
+    let currentDir = __dirname;
+    while (currentDir !== path.dirname(currentDir)) {
+        if (fsSync.existsSync(path.join(currentDir, 'package.json'))) {
+            return currentDir;
+        }
+        currentDir = path.dirname(currentDir);
+    }
+    // Fallback to the directory where this script is located
+    return path.dirname(__dirname);
+};
+
+const PROJECT_ROOT = getProjectRoot();
+const TOKEN_PATH = path.join(PROJECT_ROOT, 'token.json');
+const CREDENTIALS_PATH = path.join(PROJECT_ROOT, 'credentials.json');
 
 export class GoogleFormsService {
     private formsApi!: forms_v1.Forms;
@@ -74,10 +89,27 @@ export class GoogleFormsService {
      * Load or request or authorization to call APIs.
      */
     private async authorize(): Promise<Auth.OAuth2Client> {
+        console.log(`Looking for credentials at: ${CREDENTIALS_PATH}`);
+        console.log(`Looking for token at: ${TOKEN_PATH}`);
+        console.log(`Current working directory: ${process.cwd()}`);
+        console.log(`Project root detected as: ${PROJECT_ROOT}`);
+        
         let client = await this.loadSavedCredentialsIfExist();
         if (client) {
             return client;
         }
+        
+        // Check if we're running in a headless environment (like VS Code MCP)
+        const isHeadless = !process.env.DISPLAY && !process.env.SSH_CLIENT && process.env.NODE_ENV !== 'development';
+        
+        if (isHeadless || process.env.MCP_HEADLESS === 'true') {
+            throw new Error(`No valid token.json found. Please run authentication first:
+1. Run 'npm run auth' or 'node dist/gform-mcp-server.js' in a terminal with browser access
+2. Complete the OAuth flow in your browser  
+3. Then restart the MCP server
+Token path: ${TOKEN_PATH}`);
+        }
+        
         try {
             client = await authenticate({
                 scopes: SCOPES,
@@ -92,6 +124,9 @@ export class GoogleFormsService {
             }
         } catch (error: any) {
             console.error("Authorization error:", error.message);
+            if (error.message.includes('ENOENT') || error.message.includes('not found')) {
+                throw new Error(`credentials.json file not found. Please ensure it exists at: ${CREDENTIALS_PATH}`);
+            }
             throw new Error(`Failed to authorize: ${error.message}. Ensure 'credentials.json' is correct and accessible, and complete the authentication prompt in your browser.`);
         }
     }
@@ -441,7 +476,7 @@ export class GoogleFormsService {
 
     private escapeCSVValue(value: string): string {
         if (!value) return '""';
-        // Escape double quotes and wrap in quotes
+        // Escape double quotes and wrap in quotes if needed
         const escaped = value.replace(/"/g, '""');
         // Wrap in quotes if contains comma, newline, or quotes
         if (escaped.includes(',') || escaped.includes('\n') || escaped.includes('"')) {

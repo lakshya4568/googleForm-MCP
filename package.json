@@ -8,6 +8,7 @@
     "start": "node dist/gform-mcp-server.js",
     "dev": "tsc -w & nodemon dist/gform-mcp-server.js",
     "prestart": "npm run build",
+    "auth": "npm run build && node auth.js",
     "test": "node test-server.js",
     "clean": "rm -rf dist && rm -f token.json"
   },

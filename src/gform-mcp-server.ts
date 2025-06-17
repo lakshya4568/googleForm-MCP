@@ -68,6 +68,7 @@ async function main() {
     // --- Tools --- 
     server.tool(
         "get-form-details",
+        "Retrieves complete metadata and question structure for a Google Form including title, description, and all form items",
         {
             formId: z.string().describe("The ID of the Google Form to retrieve details from.")
         },
@@ -85,6 +86,7 @@ async function main() {
 
     server.tool(
         "fetch-form-responses",
+        "Fetches all responses from a Google Form and returns them in JSON or CSV format for analysis",
         {
             formId: z.string().describe("The ID of the Google Form to fetch responses from."),
             format: z.enum(["json", "csv"]).optional().default("json").describe("The desired output format for the responses (json or csv).")
@@ -104,6 +106,7 @@ async function main() {
 
     server.tool(
         "create-form",
+        "Creates a new Google Form with the specified title and optional description, returning the form ID and URLs",
         {
             title: z.string().describe("The title of the new Google Form."),
             description: z.string().optional().describe("The description of the new Google Form (optional).")
@@ -129,6 +132,7 @@ async function main() {
 
     server.tool(
         "add-question-to-form",
+        "Adds a new question to an existing Google Form with basic question types (TEXT, CHOICE, SCALE, etc.)",
         {
             formId: z.string().describe("The ID of the Google Form to add a question to."),
             questionTitle: z.string().describe("The title of the new question."),
@@ -151,6 +155,7 @@ async function main() {
 
     server.tool(
         "add-question-with-options",
+        "Adds a new question to a Google Form with custom options for choice questions or labels for scale questions, with required/optional settings",
         {
             formId: z.string().describe("The ID of the Google Form to add a question to."),
             questionTitle: z.string().describe("The title of the new question."),
@@ -181,6 +186,7 @@ async function main() {
 
     server.tool(
         "list-forms",
+        "Lists all Google Forms accessible to the authenticated user with pagination support for efficient browsing",
         {
             maxResults: z.number().optional().default(10).describe("Maximum number of forms to return (default: 10, max: 100).")
         },
@@ -201,6 +207,7 @@ async function main() {
 
     server.tool(
         "update-form-settings",
+        "Updates the settings of an existing Google Form including title, description, email collection, and response editing permissions",
         {
             formId: z.string().describe("The ID of the Google Form to update."),
             title: z.string().optional().describe("New title for the form."),
@@ -236,6 +243,7 @@ async function main() {
 
     server.tool(
         "create-survey-with-questions",
+        "Creates a complete Google Form survey with multiple questions in one operation, supporting all question types and options",
         {
             title: z.string().describe("The title of the new survey."),
             description: z.string().describe("The description of the new survey."),
@@ -272,6 +280,7 @@ async function main() {
 
     server.tool(
         "debug-form-structure",
+        "Provides detailed debugging information about a Google Form's structure, items, and metadata for troubleshooting",
         {
             formId: z.string().describe("The ID of the Google Form to debug.")
         },
