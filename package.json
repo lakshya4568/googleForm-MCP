@@ -4,11 +4,11 @@
   "description": "MCP Server for Google Forms API",
   "main": "dist/gform-mcp-server.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/gform-mcp-server.js",
+    "build": "ts-node",
+    "start": "ts-node src/gform-mcp-server.ts",
     "dev": "tsc -w & nodemon dist/gform-mcp-server.js",
-    "prestart": "npm run build",
-    "auth": "npm run build && node auth.js",
+    "prestart": "node auth.js",
+    "auth": "node auth.js",
     "test": "node test-server.js",
     "clean": "rm -rf dist && rm -f token.json"
   },
@@ -29,6 +29,7 @@
   "devDependencies": {
     "@types/node": "^20.19.0",
     "nodemon": "^3.0.2",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   }
 }
