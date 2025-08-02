@@ -188,10 +188,6 @@ Token path: ${TOKEN_PATH}`);
 
   async addQuestion(formId, title, questionType = "TEXT", index = 0) {
     try {
-      // Get the current form to get the latest revision ID
-      const currentForm = await this.formsApi.forms.get({ formId });
-      const revisionId = currentForm.data.revisionId || "";
-
       // Create the question object based on type - ONLY set one question type per the API spec
       let question = {
         required: false,
@@ -266,11 +262,15 @@ Token path: ${TOKEN_PATH}`);
         },
       ];
 
+      // Get the latest revision ID right before the update to ensure it's current
+      const currentForm = await this.formsApi.forms.get({ formId });
+      const revisionId = currentForm.data.revisionId || "";
+
       const res = await this.formsApi.forms.batchUpdate({
         formId: formId,
         requestBody: {
           requests: requests,
-          writeControl: { requiredRevisionId: revisionId },
+          writeControl: { targetRevisionId: revisionId },
         },
       });
       return res.data;
@@ -293,10 +293,6 @@ Token path: ${TOKEN_PATH}`);
 
   async addQuestionWithOptions(formId, title, questionType, options, isRequired = false) {
     try {
-      // Get the current form to get the latest revision ID
-      const currentForm = await this.formsApi.forms.get({ formId });
-      const revisionId = currentForm.data.revisionId || "";
-
       // Create the question object based on type
       let question = {
         required: isRequired,
@@ -375,11 +371,15 @@ Token path: ${TOKEN_PATH}`);
         },
       ];
 
+      // Get the latest revision ID right before the update to ensure it's current
+      const currentForm = await this.formsApi.forms.get({ formId });
+      const revisionId = currentForm.data.revisionId || "";
+
       const res = await this.formsApi.forms.batchUpdate({
         formId: formId,
         requestBody: {
           requests: requests,
-          writeControl: { requiredRevisionId: revisionId },
+          writeControl: { targetRevisionId: revisionId },
         },
       });
       return res.data;
@@ -415,6 +415,11 @@ Token path: ${TOKEN_PATH}`);
       // If description is provided, update the form with description using batchUpdate
       if (description && res.data.formId) {
         const formId = res.data.formId;
+        
+        // Add a small delay to ensure the form creation is fully propagated
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Get the latest revision ID right before updating
         const currentForm = await this.formsApi.forms.get({ formId });
         const revisionId = currentForm.data.revisionId || "";
 
@@ -431,7 +436,7 @@ Token path: ${TOKEN_PATH}`);
                 },
               },
             ],
-            writeControl: { requiredRevisionId: revisionId },
+            writeControl: { targetRevisionId: revisionId },
           },
         });
       }
@@ -612,11 +617,15 @@ Token path: ${TOKEN_PATH}`);
     }
 
     try {
+      // Get the latest revision ID right before the update to ensure it's current
+      const currentForm = await this.formsApi.forms.get({ formId });
+      const revisionId = currentForm.data.revisionId || "";
+
       const res = await this.formsApi.forms.batchUpdate({
         formId: formId,
         requestBody: {
           requests: requests,
-          writeControl: { requiredRevisionId: "" },
+          writeControl: { targetRevisionId: revisionId },
         },
       });
       return res.data;
@@ -647,9 +656,15 @@ Token path: ${TOKEN_PATH}`);
 
       const formId = form.formId;
 
-      // Add questions one by one
+      // Add questions one by one with a small delay to prevent rapid succession issues
       for (let i = 0; i < questions.length; i++) {
         const question = questions[i];
+        
+        // Add a small delay between questions for API rate limiting
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay
+        }
+        
         await this.addQuestionWithOptions(
           formId,
           question.title,

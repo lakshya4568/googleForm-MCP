@@ -2,7 +2,7 @@
 
 ## ✅ FULLY FUNCTIONAL - ALL ISSUES RESOLVED
 
-**Last Updated:** June 8, 2025
+**Last Updated:** August 2, 2025
 
 ## Status: PRODUCTION READY ✅
 
@@ -97,9 +97,27 @@ The Google Forms MCP Server is now ready for:
 
 1. **Fixed createForm method** - Removed restricted fields from form creation
 2. **Fixed question creation** - Proper union field handling for all question types
-3. **Fixed revision ID handling** - Always use latest revision ID for updates
+3. **FIXED revision ID handling** - **MAJOR FIX**: Switched from `requiredRevisionId` to `targetRevisionId` in writeControl to prevent revision ID conflicts during multiple consecutive updates
 4. **Added proper error handling** - Detailed error messages for troubleshooting
-5. **Added rate limiting** - Delays between rapid API calls to prevent conflicts
+5. **Optimized API rate limiting** - Reduced delays between API calls since targetRevisionId handles conflicts automatically
+
+### 📋 TECHNICAL DETAILS: REVISION ID FIX
+
+**Problem**: When creating surveys with multiple questions, the `create-survey-with-questions` tool would fail with "revision ID does not match" errors.
+
+**Root Cause**: Using `requiredRevisionId` in `writeControl` requires exact revision ID matches. When adding multiple questions rapidly, the revision ID becomes stale between fetch and update operations.
+
+**Solution**: Switched to `targetRevisionId` in `writeControl`, which:
+
+- Allows Google's API to automatically handle revision conflicts
+- Transforms requests against intervening changes
+- Resolves conflicts automatically on the server side
+- Enables reliable sequential updates without precise revision tracking
+
+**Files Modified**:
+
+- `src/googleFormsService.js`: Updated all `batchUpdate` calls to use `targetRevisionId`
+- Methods affected: `addQuestion`, `addQuestionWithOptions`, `createForm`, `updateFormSettings`
 
 ### 📊 PERFORMANCE METRICS
 

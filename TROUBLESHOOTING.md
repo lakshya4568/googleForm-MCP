@@ -2,18 +2,38 @@
 
 ## Common Issues and Solutions
 
-### 1. OAuth Authentication Issues
+### 1. Revision ID Issues (FIXED)
+
+#### Problem: "Update failed: the revision ID does not match the latest revision ID"
+
+This error occurred when creating surveys with multiple questions or making rapid consecutive updates to forms.
+
+**Status:** ✅ **RESOLVED** - Fixed in the latest version
+
+**Technical Details:**
+
+- **Issue**: Using `requiredRevisionId` in writeControl required exact revision matches
+- **Solution**: Switched to `targetRevisionId` which allows Google's API to handle conflicts automatically
+- **Result**: Multiple questions can now be added reliably without revision ID conflicts
+
+**If you still see this error:**
+
+1. Update to the latest version of the MCP server
+2. Restart the server
+3. The issue should be resolved automatically
+
+### 2. OAuth Authentication Issues
 
 #### Problem: "Error 403: access_denied" or "MCP has not completed the Google verification process"
 
 **Solution:**
 
 1. **Add Test User in Google Cloud Console:**
-   * Go to [Google Cloud Console](https://console.cloud.google.com/)
-   * Navigate to "APIs & Services" > "OAuth consent screen"
-   * Under "Test users", click "ADD USERS"
-   * Add your Google account email address
-   * Save the changes
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Navigate to "APIs & Services" > "OAuth consent screen"
+   - Under "Test users", click "ADD USERS"
+   - Add your Google account email address
+   - Save the changes
 
 2. **Clear Existing Tokens:**
 
@@ -28,8 +48,8 @@
    ```
 
 4. **Complete OAuth Flow:**
-   * Follow the browser prompt to authenticate
-   * Grant all requested permissions
+   - Follow the browser prompt to authenticate
+   - Grant all requested permissions
 
 #### Problem: "Invalid redirect URI" or OAuth callback errors
 
@@ -38,8 +58,8 @@
 1. In Google Cloud Console, go to "APIs & Services" > "Credentials"
 2. Edit your OAuth 2.0 Client ID
 3. Under "Authorized redirect URIs", ensure you have:
-   * `http://localhost`
-   * `http://127.0.0.1`
+   - `http://localhost`
+   - `http://127.0.0.1`
 4. Save changes and restart the server
 
 ### 2. API Permissions Issues
@@ -49,18 +69,18 @@
 **Solution:**
 
 1. **Check API Enablement:**
-   * Go to Google Cloud Console > "APIs & Services" > "Library"
-   * Search for and enable:
-     * Google Forms API
-     * Google Drive API
+   - Go to Google Cloud Console > "APIs & Services" > "Library"
+   - Search for and enable:
+     - Google Forms API
+     - Google Drive API
 
 2. **Verify Scopes:**
    Ensure your OAuth consent screen includes all required scopes:
-   * `https://www.googleapis.com/auth/forms.body.readonly`
-   * `https://www.googleapis.com/auth/forms.responses.readonly`
-   * `https://www.googleapis.com/auth/drive.metadata.readonly`
-   * `https://www.googleapis.com/auth/forms.body`
-   * `https://www.googleapis.com/auth/drive.readonly`
+   - `https://www.googleapis.com/auth/forms.body.readonly`
+   - `https://www.googleapis.com/auth/forms.responses.readonly`
+   - `https://www.googleapis.com/auth/drive.metadata.readonly`
+   - `https://www.googleapis.com/auth/forms.body`
+   - `https://www.googleapis.com/auth/drive.readonly`
 
 3. **Re-authenticate:**
 
@@ -76,17 +96,17 @@
 **Possible Causes & Solutions:**
 
 1. **Form ID is incorrect:**
-   * Extract form ID from Google Forms URL
-   * URL format: `https://docs.google.com/forms/d/FORM_ID/edit`
-   * Use only the FORM_ID part
+   - Extract form ID from Google Forms URL
+   - URL format: `https://docs.google.com/forms/d/FORM_ID/edit`
+   - Use only the FORM_ID part
 
 2. **No permission to access the form:**
-   * Ensure the authenticated Google account owns the form or has edit access
-   * If form is shared, verify sharing permissions
+   - Ensure the authenticated Google account owns the form or has edit access
+   - If form is shared, verify sharing permissions
 
 3. **Form is in Trash:**
-   * Check Google Drive trash for the form
-   * Restore if necessary
+   - Check Google Drive trash for the form
+   - Restore if necessary
 
 ### 4. Installation and Build Issues
 
@@ -220,9 +240,9 @@ If you're still experiencing issues:
    Create a basic test form to isolate issues
 
 3. **Verify Prerequisites:**
-   * Node.js 18+ installed
-   * Valid Google Cloud project
-   * Proper OAuth credentials
+   - Node.js 18+ installed
+   - Valid Google Cloud project
+   - Proper OAuth credentials
 
 4. **Common Debugging Steps:**
 
@@ -239,10 +259,10 @@ If you're still experiencing issues:
 
 ## Version Compatibility
 
-* **Node.js:** 18.0.0 or higher
-* **MCP SDK:** 1.12.1 or higher
-* **Google APIs:** Latest stable versions
-* **TypeScript:** 5.x or higher
+- **Node.js:** 18.0.0 or higher
+- **MCP SDK:** 1.12.1 or higher
+- **Google APIs:** Latest stable versions
+- **TypeScript:** 5.x or higher
 
 ## Useful Commands
 
