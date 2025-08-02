@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { GoogleFormsService } = require("./dist/googleFormsService.js");
+const { GoogleFormsService } = require("./src/googleFormsService.js");
 
 async function testGoogleFormsService() {
   try {

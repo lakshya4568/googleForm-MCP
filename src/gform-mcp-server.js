@@ -1,13 +1,11 @@
-import {
+const {
   McpServer,
   ResourceTemplate,
-} from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { GoogleFormsService } from "./googleFormsService.js";
-import { z } from "zod";
-import dotenv from "dotenv";
-
-dotenv.config();
+} = require("@modelcontextprotocol/sdk/server/mcp.js");
+const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
+const { GoogleFormsService } = require("./googleFormsService.js");
+const { z } = require("zod");
+require("dotenv").config();
 
 async function main() {
   const server = new McpServer({
@@ -123,7 +121,7 @@ async function main() {
         .string()
         .describe("The ID of the Google Form to retrieve details from."),
     },
-    async ({ formId }: { formId: string }) => {
+    async ({ formId }) => {
       const metadata = await formsService.getFormMetadata(formId);
       const questions = await formsService.getFormQuestions(formId);
       if (!metadata || !questions) {
@@ -161,7 +159,7 @@ async function main() {
         .default("json")
         .describe("The desired output format for the responses (json or csv)."),
     },
-    async ({ formId, format }: { formId: string; format?: "json" | "csv" }) => {
+    async ({ formId, format }) => {
       const responsesData = await formsService.getFormResponses(formId);
       if (!responsesData) {
         return {
@@ -199,7 +197,7 @@ async function main() {
         .optional()
         .describe("The description of the new Google Form (optional)."),
     },
-    async ({ title, description }: { title: string; description?: string }) => {
+    async ({ title, description }) => {
       const newForm = await formsService.createForm(title, description);
       if (!newForm) {
         return {
@@ -252,22 +250,7 @@ async function main() {
         .default("TEXT")
         .describe("The type of question. Defaults to 'TEXT'."),
     },
-    async ({
-      formId,
-      questionTitle,
-      questionType,
-    }: {
-      formId: string;
-      questionTitle: string;
-      questionType?:
-        | "TEXT"
-        | "PARAGRAPH"
-        | "CHOICE"
-        | "RADIO"
-        | "CHECKBOX"
-        | "DROPDOWN"
-        | "SCALE";
-    }) => {
+    async ({ formId, questionTitle, questionType }) => {
       try {
         const updatedForm = await formsService.addQuestion(
           formId,
@@ -290,7 +273,7 @@ async function main() {
             { type: "text", text: JSON.stringify(updatedForm, null, 2) },
           ],
         };
-      } catch (error: any) {
+      } catch (error) {
         return {
           content: [
             { type: "text", text: `Error adding question: ${error.message}` },
@@ -332,26 +315,7 @@ async function main() {
         .default(false)
         .describe("Whether the question is required."),
     },
-    async ({
-      formId,
-      questionTitle,
-      questionType,
-      options,
-      isRequired,
-    }: {
-      formId: string;
-      questionTitle: string;
-      questionType:
-        | "TEXT"
-        | "PARAGRAPH"
-        | "CHOICE"
-        | "RADIO"
-        | "CHECKBOX"
-        | "DROPDOWN"
-        | "SCALE";
-      options?: string[];
-      isRequired?: boolean;
-    }) => {
+    async ({ formId, questionTitle, questionType, options, isRequired }) => {
       try {
         const updatedForm = await formsService.addQuestionWithOptions(
           formId,
@@ -376,7 +340,7 @@ async function main() {
             { type: "text", text: JSON.stringify(updatedForm, null, 2) },
           ],
         };
-      } catch (error: any) {
+      } catch (error) {
         return {
           content: [
             { type: "text", text: `Error adding question: ${error.message}` },
@@ -397,7 +361,7 @@ async function main() {
         .default(10)
         .describe("Maximum number of forms to return (default: 10, max: 100)."),
     },
-    async ({ maxResults }: { maxResults?: number }) => {
+    async ({ maxResults }) => {
       try {
         const forms = await formsService.listForms(
           Math.min(maxResults || 10, 100)
@@ -412,7 +376,7 @@ async function main() {
         return {
           content: [{ type: "text", text: JSON.stringify(forms, null, 2) }],
         };
-      } catch (error: any) {
+      } catch (error) {
         return {
           content: [
             { type: "text", text: `Error listing forms: ${error.message}` },
@@ -442,19 +406,7 @@ async function main() {
         .optional()
         .describe("Whether to allow respondents to edit their responses."),
     },
-    async ({
-      formId,
-      title,
-      description,
-      collectEmail,
-      allowResponseEdits,
-    }: {
-      formId: string;
-      title?: string;
-      description?: string;
-      collectEmail?: boolean;
-      allowResponseEdits?: boolean;
-    }) => {
+    async ({ formId, title, description, collectEmail, allowResponseEdits }) => {
       try {
         const updatedForm = await formsService.updateFormSettings(formId, {
           title,
@@ -475,7 +427,7 @@ async function main() {
             { type: "text", text: JSON.stringify(updatedForm, null, 2) },
           ],
         };
-      } catch (error: any) {
+      } catch (error) {
         return {
           content: [
             { type: "text", text: `Error updating form: ${error.message}` },
@@ -522,27 +474,7 @@ async function main() {
         )
         .describe("Array of questions to add to the survey."),
     },
-    async ({
-      title,
-      description,
-      questions,
-    }: {
-      title: string;
-      description: string;
-      questions: Array<{
-        title: string;
-        type:
-          | "TEXT"
-          | "PARAGRAPH"
-          | "CHOICE"
-          | "RADIO"
-          | "CHECKBOX"
-          | "DROPDOWN"
-          | "SCALE";
-        options?: string[];
-        required?: boolean;
-      }>;
-    }) => {
+    async ({ title, description, questions }) => {
       try {
         const result = await formsService.createSurveyWithQuestions(
           title,
@@ -563,7 +495,7 @@ async function main() {
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
         };
-      } catch (error: any) {
+      } catch (error) {
         return {
           content: [
             { type: "text", text: `Error creating survey: ${error.message}` },
@@ -580,7 +512,7 @@ async function main() {
     {
       formId: z.string().describe("The ID of the Google Form to debug."),
     },
-    async ({ formId }: { formId: string }) => {
+    async ({ formId }) => {
       try {
         const metadata = await formsService.getFormMetadata(formId);
         if (!metadata) {
@@ -597,15 +529,15 @@ async function main() {
 
         const debug_info = {
           formId: metadata.formId,
-          title: metadata.info?.title,
-          description: metadata.info?.description,
+          title: metadata.info ? metadata.info.title : undefined,
+          description: metadata.info ? metadata.info.description : undefined,
           revisionId: metadata.revisionId,
           responderUri: metadata.responderUri,
           linkedSheetId: metadata.linkedSheetId,
           settings: metadata.settings,
-          itemCount: metadata.items?.length || 0,
+          itemCount: metadata.items ? metadata.items.length : 0,
           items:
-            metadata.items?.map((item, index) => ({
+            metadata.items ? metadata.items.map((item, index) => ({
               index,
               itemId: item.itemId,
               title: item.title,
@@ -615,7 +547,7 @@ async function main() {
                     key.endsWith("Question")
                   )
                 : "N/A",
-            })) || [],
+            })) : [],
         };
 
         return {
@@ -623,7 +555,7 @@ async function main() {
             { type: "text", text: JSON.stringify(debug_info, null, 2) },
           ],
         };
-      } catch (error: any) {
+      } catch (error) {
         return {
           content: [
             { type: "text", text: `Error debugging form: ${error.message}` },

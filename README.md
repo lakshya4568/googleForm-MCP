@@ -19,7 +19,6 @@ This server allows you to interact with Google Forms using the Model Context Pro
 
     ```bash
     npm install
-    npm run build
     ```
 
 2. **Configure Google Cloud Project and OAuth 2.0:**

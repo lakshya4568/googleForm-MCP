@@ -1,4 +1,4 @@
-const { GoogleFormsService } = require('./dist/googleFormsService.js');
+const { GoogleFormsService } = require('./src/googleFormsService.js');
 
 async function authenticate() {
     console.log('Starting Google Forms authentication...');
