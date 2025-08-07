@@ -5,7 +5,7 @@ const path = require("path");
 
 // Test the MCP server by sending messages to it
 async function testMCPServer() {
-  const serverPath = path.join(__dirname, "src", "gform-mcp-server.js");
+  const serverPath = path.join(__dirname, "dist", "gform-mcp-server.js");
 
   console.log("Starting MCP server...");
   const serverProcess = spawn("node", [serverPath], {

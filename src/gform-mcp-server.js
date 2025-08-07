@@ -2,12 +2,24 @@ const {
   McpServer,
   ResourceTemplate,
 } = require("@modelcontextprotocol/sdk/server/mcp.js");
-const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
+const {
+  StdioServerTransport,
+} = require("@modelcontextprotocol/sdk/server/stdio.js");
 const { GoogleFormsService } = require("./googleFormsService.js");
 const { z } = require("zod");
+const { execSync } = require("child_process");
 require("dotenv").config();
 
 async function main() {
+  try {
+    console.log("Running authentication before starting the server...");
+    execSync("node auth.js", { stdio: "inherit" });
+    console.log("Authentication successful.");
+  } catch (error) {
+    console.error("Authentication failed. Server will not start.", error);
+    process.exit(1);
+  }
+
   const server = new McpServer({
     name: "GFormMCP",
     version: "1.0.0",
@@ -406,7 +418,13 @@ async function main() {
         .optional()
         .describe("Whether to allow respondents to edit their responses."),
     },
-    async ({ formId, title, description, collectEmail, allowResponseEdits }) => {
+    async ({
+      formId,
+      title,
+      description,
+      collectEmail,
+      allowResponseEdits,
+    }) => {
       try {
         const updatedForm = await formsService.updateFormSettings(formId, {
           title,
@@ -536,18 +554,19 @@ async function main() {
           linkedSheetId: metadata.linkedSheetId,
           settings: metadata.settings,
           itemCount: metadata.items ? metadata.items.length : 0,
-          items:
-            metadata.items ? metadata.items.map((item, index) => ({
-              index,
-              itemId: item.itemId,
-              title: item.title,
-              description: item.description,
-              questionType: item.questionItem
-                ? Object.keys(item.questionItem.question || {}).find((key) =>
-                    key.endsWith("Question")
-                  )
-                : "N/A",
-            })) : [],
+          items: metadata.items
+            ? metadata.items.map((item, index) => ({
+                index,
+                itemId: item.itemId,
+                title: item.title,
+                description: item.description,
+                questionType: item.questionItem
+                  ? Object.keys(item.questionItem.question || {}).find((key) =>
+                      key.endsWith("Question")
+                    )
+                  : "N/A",
+              }))
+            : [],
         };
 
         return {
