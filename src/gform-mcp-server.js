@@ -8,12 +8,15 @@ const {
 const { GoogleFormsService } = require("./googleFormsService.js");
 const { z } = require("zod");
 const { execSync } = require("child_process");
+const path = require("path");
 require("dotenv").config();
 
 async function main() {
   try {
     console.log("Running authentication before starting the server...");
-    execSync("node auth.js", { stdio: "inherit" });
+    // Use absolute path to auth.js relative to this file's location
+    const authPath = path.join(__dirname, "..", "auth.js");
+    execSync(`node "${authPath}"`, { stdio: "inherit" });
     console.log("Authentication successful.");
   } catch (error) {
     console.error("Authentication failed. Server will not start.", error);
