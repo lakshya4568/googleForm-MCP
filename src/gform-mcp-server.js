@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const {
   McpServer,
   ResourceTemplate,
@@ -7,19 +9,48 @@ const {
 } = require("@modelcontextprotocol/sdk/server/stdio.js");
 const { GoogleFormsService } = require("./googleFormsService.js");
 const { z } = require("zod");
-const { execSync } = require("child_process");
 const path = require("path");
 require("dotenv").config();
 
+// Check if running in auth mode (CLI subcommand)
+const args = process.argv.slice(2);
+if (args[0] === "auth") {
+  // Run interactive authentication
+  runAuth().catch((err) => {
+    console.error("Authentication failed:", err.message);
+    process.exit(1);
+  });
+} else {
+  // Run MCP server
+  main().catch((error) => {
+    console.error("Failed to start GFormMCP Server:", error);
+    process.exit(1);
+  });
+}
+
+async function runAuth() {
+  console.log("🔐 Google Forms MCP - Authentication Setup\n");
+
+  // Force development mode for interactive auth
+  process.env.NODE_ENV = "development";
+  process.env.MCP_HEADLESS = "false";
+
+  const service = new GoogleFormsService();
+  await service.init();
+}
+
 async function main() {
+  // Initialize the Google Forms service (auto-handles auth)
+  const formsService = new GoogleFormsService();
+
   try {
-    console.log("Running authentication before starting the server...");
-    // Use absolute path to auth.js relative to this file's location
-    const authPath = path.join(__dirname, "..", "auth.js");
-    execSync(`node "${authPath}"`, { stdio: "inherit" });
-    console.log("Authentication successful.");
+    await formsService.init();
   } catch (error) {
-    console.error("Authentication failed. Server will not start.", error);
+    // If auth fails, provide helpful instructions (sent to stderr, won't break MCP)
+    console.error(
+      "\n❌ Authentication required. Run: npx gform-mcp-server auth\n"
+    );
+    console.error(error.message);
     process.exit(1);
   }
 
@@ -27,11 +58,8 @@ async function main() {
     name: "GFormMCP",
     version: "1.0.0",
     description:
-      "MCP Server for Google Forms API integration, compatible with Cline.",
+      "MCP Server for Google Forms API - Create, manage, and analyze Google Forms via MCP protocol.",
   });
-
-  const formsService = new GoogleFormsService();
-  await formsService.init();
 
   // --- Resources ---
   server.resource(
@@ -622,8 +650,3 @@ async function main() {
   await server.connect(transport);
   // Server started successfully - no console output in MCP server
 }
-
-main().catch((error) => {
-  console.error("Failed to start GFormMCP Server:", error);
-  process.exit(1);
-});
