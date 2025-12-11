@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 const {
   McpServer,
   ResourceTemplate,
@@ -12,32 +10,11 @@ const { z } = require("zod");
 const path = require("path");
 require("dotenv").config();
 
-// Check if running in auth mode (CLI subcommand)
-const args = process.argv.slice(2);
-if (args[0] === "auth") {
-  // Run interactive authentication
-  runAuth().catch((err) => {
-    console.error("Authentication failed:", err.message);
-    process.exit(1);
-  });
-} else {
-  // Run MCP server
-  main().catch((error) => {
-    console.error("Failed to start GFormMCP Server:", error);
-    process.exit(1);
-  });
-}
-
-async function runAuth() {
-  console.log("🔐 Google Forms MCP - Authentication Setup\n");
-
-  // Force development mode for interactive auth
-  process.env.NODE_ENV = "development";
-  process.env.MCP_HEADLESS = "false";
-
-  const service = new GoogleFormsService();
-  await service.init();
-}
+// Run MCP server
+main().catch((error) => {
+  console.error("Failed to start GFormMCP Server:", error);
+  process.exit(1);
+});
 
 async function main() {
   // Initialize the Google Forms service (auto-handles auth)

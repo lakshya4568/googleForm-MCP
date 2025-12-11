@@ -1,34 +1,16 @@
 # Google Forms MCP Server
 
 > **✅ STATUS: FULLY FUNCTIONAL - PRODUCTION READY**  
-> All critical issues have been resolved. All 9 tools, 3 resources, and 1 prompt are working correctly with Claude, Cline, VS Code, and other MCP clients.
+> All 9 tools, 3 resources, and 1 prompt are working correctly with Claude, Cline, VS Code, and other MCP clients.
 
 This server allows you to interact with Google Forms using the Model Context Protocol (MCP).
 
 ## 🚀 Quick Start
 
-### Option 1: NPX (Recommended for MCP Clients)
-
-Use directly with npx - no installation required:
-
-```bash
-npx gform-mcp-server
-```
-
-### Option 2: Global Install
-
-```bash
-npm install -g gform-mcp-server
-gform-mcp-server
-```
-
-### Option 3: Clone Repository
-
 ```bash
 git clone https://github.com/lakshya4568/googleForm-MCP.git
 cd googleForm-MCP
 npm install
-npm start
 ```
 
 ## 🔐 Authentication Setup
@@ -41,81 +23,89 @@ npm start
 4. Go to "APIs & Services" > "Credentials"
 5. Click "Create Credentials" > "OAuth client ID"
 6. Choose **"Desktop application"**
-7. Download the JSON file and save it as `credentials.json`
+7. Download the JSON file and save it as `credentials.json` in the project root
 
 ### Step 2: Configure OAuth Consent Screen
 
 1. Go to "APIs & Services" > "OAuth consent screen"
 2. Add your email as a **Test user** (required for testing mode)
-3. Add required scopes if prompted
 
-### Step 3: One-Time Authentication (Run in Terminal)
-
-Run the auth command with credentials path set via environment variable:
+### Step 3: Authenticate (One-time)
 
 ```bash
-# Using npx
-GFORM_CREDENTIALS_PATH=/path/to/credentials.json npx gform-mcp-server auth
-
-# Or from cloned repo (credentials.json in project root)
-node auth.js
+npm run auth
 ```
 
-This will:
-
-1. Open a browser for Google OAuth
-2. Save the refresh token to `token.json` in the project directory
+This will open a browser for Google OAuth. After authenticating, `token.json` will be created automatically.
 
 ### Step 4: Configure MCP Client
 
-Add to your MCP client's configuration (e.g., `.vscode/mcp.json`):
+Add to your `.vscode/mcp.json`:
 
 ```json
 {
   "servers": {
     "google-forms": {
-      "command": "npx",
-      "args": ["-y", "gform-mcp-server"],
+      "command": "node",
+      "args": ["/path/to/googleForm-MCP/src/gform-mcp-server.js"],
       "env": {
         "GFORM_CREDENTIALS_PATH": "${input:gform_credentials_path}"
-      }
+      },
+      "type": "stdio"
     }
   },
   "inputs": [
     {
       "id": "gform_credentials_path",
       "type": "promptString",
-      "description": "Path to Google OAuth credentials.json file",
-      "password": false
+      "description": "Path to Google OAuth credentials.json file"
     }
   ]
 }
 ```
 
-**That's it!** VS Code will prompt you for the credentials path when starting the server.
+Or with direct path (no prompt):
+
+```json
+{
+  "servers": {
+    "google-forms": {
+      "command": "node",
+      "args": ["/path/to/googleForm-MCP/src/gform-mcp-server.js"],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+### Claude Desktop
+
+Add to `~/.claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "google-forms": {
+      "command": "node",
+      "args": ["/path/to/googleForm-MCP/src/gform-mcp-server.js"]
+    }
+  }
+}
+```
 
 ## 📋 Configuration
 
-| Environment Variable     | Description                                        |
-| ------------------------ | -------------------------------------------------- |
-| `GFORM_CREDENTIALS_PATH` | Path to credentials.json from Google Cloud Console |
-| `GFORM_TOKEN_PATH`       | Custom path for token.json (optional)              |
-| `GFORM_CONFIG_DIR`       | Custom config directory (optional)                 |
+| Environment Variable     | Description                                            |
+| ------------------------ | ------------------------------------------------------ |
+| `GFORM_CREDENTIALS_PATH` | Path to credentials.json (optional if in project root) |
+| `GFORM_TOKEN_PATH`       | Custom path for token.json (optional)                  |
 
 Files:
 
-- `credentials.json` - OAuth credentials downloaded from Google Cloud Console
-- `token.json` - Refresh token (auto-generated after first auth, saved in project directory)
-
-| Environment Variable     | Description                                                   |
-| ------------------------ | ------------------------------------------------------------- |
-| `GFORM_CONFIG_DIR`       | Custom directory for storing config (default: `~/.gform-mcp`) |
-| `GFORM_TOKEN_PATH`       | Custom path for token.json file                               |
-| `GFORM_CREDENTIALS_PATH` | Custom path for credentials.json file                         |
+- `credentials.json` - OAuth credentials from Google Cloud Console
+- `token.json` - Refresh token (auto-generated after auth)
 
 ## 🛠️ Available Tools
-
-The server provides these MCP tools:
 
 | Tool                           | Description                                                         |
 | ------------------------------ | ------------------------------------------------------------------- |
@@ -137,50 +127,7 @@ The server provides these MCP tools:
 | `gform://{formId}/questions` | Form questions and structure  |
 | `gform://{formId}/responses` | Form response data            |
 
-## 💡 Usage Examples
-
-### With VS Code (mcp.json)
-
-```json
-{
-  "servers": {
-    "google-forms": {
-      "command": "npx",
-      "args": ["-y", "gform-mcp-server"],
-      "env": {
-        "GFORM_CREDENTIALS_PATH": "${input:gform_credentials_path}"
-      }
-    }
-  },
-  "inputs": [
-    {
-      "id": "gform_credentials_path",
-      "type": "promptString",
-      "description": "Path to Google OAuth credentials.json file"
-    }
-  ]
-}
-```
-
-### With Claude Desktop
-
-Add to `~/.claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "google-forms": {
-      "command": "npx",
-      "args": ["-y", "gform-mcp-server"],
-      "env": {
-        "GFORM_CREDENTIALS_PATH": "/path/to/credentials.json"
-      }
-    }
-  }
-}
-```
-
-### Example Tool Usage
+## 💡 Example Usage
 
 ```
 # List your forms
@@ -198,29 +145,20 @@ Use fetch-form-responses with formId="1a2b3c4d5e6f" format="csv"
 
 ## 🔒 Security
 
-- OAuth credentials are stored securely in `~/.gform-mcp/` directory
-- Credentials are never logged or exposed in MCP responses
-- Never commit credentials.json or token.json to version control
+- Never commit `credentials.json` or `token.json` to version control
+- These files are already in `.gitignore`
 
 ## ⚠️ Troubleshooting
 
 ### "Access blocked" Error
 
 - Ensure your email is added as a test user in OAuth consent screen
-- Delete `token.json` and re-authenticate
+- Delete `token.json` and run `npm run auth` again
 
 ### "Permission denied" Error
 
 - Verify Google Forms API and Drive API are enabled
 - Check that the authenticated user has access to the form
-
-### Authentication Fails in Headless Environment
-
-1. Run auth in a terminal with browser access first:
-   ```bash
-   GFORM_CREDENTIALS_PATH=/path/to/credentials.json npx gform-mcp-server auth
-   ```
-2. The token.json will be saved and used automatically on server start
 
 ## 📄 License
 

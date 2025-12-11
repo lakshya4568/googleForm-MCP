@@ -15,12 +15,12 @@ const SCOPES = [
   "https://www.googleapis.com/auth/drive.readonly", // For listing forms via Drive API
 ];
 
-// Configuration for MCP registry deployment
-// Users configure via mcp.json env block:
-//   "env": { "GFORM_CREDENTIALS_PATH": "${input:credentials_path}" }
+// Configuration:
+// 1. Place credentials.json in project root (download from Google Cloud Console)
+// 2. Run: npm run auth (or node auth.js) to authenticate
+// 3. token.json will be created automatically
 //
-// Credentials file: OAuth credentials from Google Cloud Console
-// Token file: Stored in same directory as credentials.json (auto-generated after first auth)
+// For MCP clients, set GFORM_CREDENTIALS_PATH env var to credentials.json path
 
 const getProjectRoot = () => {
   // Try to find the project root by looking for package.json

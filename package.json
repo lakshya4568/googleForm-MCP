@@ -1,28 +1,20 @@
 {
   "name": "gform-mcp-server",
   "version": "1.0.0",
-  "description": "MCP Server for Google Forms API - Create, manage, and analyze Google Forms via Model Context Protocol",
+  "description": "MCP Server for Google Forms API - Create, manage, and analyze Google Forms",
   "main": "src/gform-mcp-server.js",
-  "bin": {
-    "gform-mcp-server": "./src/gform-mcp-server.js"
-  },
   "scripts": {
     "start": "node src/gform-mcp-server.js",
     "dev": "nodemon src/gform-mcp-server.js",
-    "auth": "node src/gform-mcp-server.js auth",
+    "auth": "node auth.js",
     "test": "node test-direct.js",
     "clean": "rm -f token.json"
   },
   "keywords": [
     "mcp",
-    "model-context-protocol",
     "google-forms",
-    "google-api",
-    "forms-api",
-    "ai-tools",
     "claude",
-    "cline",
-    "ai-assistant"
+    "cline"
   ],
   "author": "lakshya4568",
   "license": "MIT",
@@ -30,18 +22,6 @@
     "type": "git",
     "url": "https://github.com/lakshya4568/googleForm-MCP.git"
   },
-  "homepage": "https://github.com/lakshya4568/googleForm-MCP#readme",
-  "bugs": {
-    "url": "https://github.com/lakshya4568/googleForm-MCP/issues"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "files": [
-    "src/",
-    "README.md",
-    "LICENSE"
-  ],
   "dependencies": {
     "@google-cloud/local-auth": "^3.0.1",
     "@modelcontextprotocol/sdk": "^1.12.1",
